@@ -28,7 +28,7 @@
         app:layout_constraintEnd_toStartOf="@+id/takePhoto"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <ImageView
+    <Button
         android:id="@+id/takePhoto"
         android:layout_width="80dp"
         android:layout_height="80dp"
