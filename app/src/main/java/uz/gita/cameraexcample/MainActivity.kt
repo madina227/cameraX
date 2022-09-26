@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
 //    private lateinit var outputDirectory: File
 
+    //Since 2021, an update to CameraX has rendered CameraX.LensFacing unusable. Use CameraSelector instead.
+    var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA //telli oldi orqa camerasini boshqarish
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,8 +40,9 @@ class MainActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+
         if (allPermissionsGranted()) {
-            startCamera()
+            startCamera(cameraSelector)
         } else {
             ActivityCompat.requestPermissions(
                 this, Constants.REQUIRED_PERMISSIONS, Constants.REQUEST_CODE_PERMISSION
@@ -49,11 +52,30 @@ class MainActivity : AppCompatActivity() {
         viewBinding.takePhoto.setOnClickListener {
             takePhoto()
         }
+//flip camera
+        viewBinding.ivFlipCamera.setOnClickListener {
+            cameraSelector =
+                if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA
+                else CameraSelector.DEFAULT_BACK_CAMERA
+            try {
+                // Only bind use cases if we can query a camera with this orientation
+                startCamera(cameraSelector)
+            } catch (exc: Exception) {
+                // Do nothing
+            }
+        }
 
     }
 
+    private fun flipCamera() {
+        cameraSelector =
+            if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) CameraSelector.DEFAULT_FRONT_CAMERA
+            else CameraSelector.DEFAULT_BACK_CAMERA
+        startCamera(cameraSelector)
+    }
+
     //(camera preview)camera ishga tushadi. rasmga olishmas faqat ishga tushishi
-    private fun startCamera() {
+    private fun startCamera(cameraSelector: CameraSelector) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
@@ -65,9 +87,8 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
             imageCapture = ImageCapture.Builder()
-                .build()
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                .build()
 
             try {
                 cameraProvider.unbindAll()
@@ -82,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    //permission -> ruhsat olish camera ishlatishga
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -89,7 +111,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (requestCode == Constants.REQUEST_CODE_PERMISSION) {
             if (allPermissionsGranted()) {
-                startCamera()
+                startCamera(cameraSelector)
             }
         } else {
             Toast.makeText(this, "permission not granted by user", Toast.LENGTH_SHORT).show()
@@ -98,7 +120,7 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-
+//faylga saqlash yozib korish kere
 //    private fun getOutputDirectory(): File {
 //        val mediaDir = externalMediaDirs.firstOrNull()?.let {
 //            File(it, resources.getString(R.string.app_name)).apply {
@@ -159,6 +181,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+
 
     private fun allPermissionsGranted() =
         Constants.REQUIRED_PERMISSIONS.all {
